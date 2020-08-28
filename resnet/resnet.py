@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tesnorflow.keras.layers import Conv2D, BatchNormalization, Activation, Add ,Input, ZeroPadding2D, MaxPooling2D
+from tesnorflow.keras.layers import Conv2D, BatchNormalization, Activation, Add ,Input, ZeroPadding2D, MaxPooling2D, AveragePooling2D, Flatten, Dense
 
 def res_identity(x,filters):
     # Identity block
@@ -59,4 +59,40 @@ def resnet50():
     x = Activation('relu')
     x = MaxPooling2D((3,3),strides=(2,2))(x)
 
+    # 2nd stage
+
     x = res_conv(x,s=1,filters=(64,256))
+    x = res_conv(x, s=1, filters=(64, 256))
+    x = res_identity(x, filters=(64, 256))
+    x = res_identity(x, filters=(64, 256))
+
+    # 3rd stage
+
+    x = res_conv(x, s=2, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+    x = res_identity(x, filters=(128, 512))
+
+    # 4th stage
+
+    x = res_conv(x, s=2, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+    x = res_identity(x, filters=(256, 1024))
+
+    # 5th stage
+
+    x = res_conv(x, s=2, filters=(512, 2048))
+    x = res_identity(x, filters=(512, 2048))
+    x = res_identity(x, filters=(512, 2048))
+
+    x =AveragePooling2D((2,2),padding='same')(x)
+
+    x = Flatten()(x)
+    x = Dense(len(class_types), activation='softmax', kernel_initializer='he_normal')(x)
+
+    model = Model(inputs=input_im, outputs=x, name='Resnet50')
+
+    return model
